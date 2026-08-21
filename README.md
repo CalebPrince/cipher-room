@@ -1,5 +1,7 @@
 # The Cipher Room
 
+**Live — [ciper-room.netlify.app](https://ciper-room.netlify.app)**
+
 A landing page for a speakeasy that is not a page. There is no scroll: the site is one continuous
 camera walk through a six-room 3D building, and every "section" is a room the camera stops in. The
 copy is real, selectable HTML — projected onto points in the scene each frame so it behaves like
@@ -9,7 +11,7 @@ Three.js + GSAP. No build step, no dependencies to install, no framework.
 
 ## Run it
 
-Any static server from this directory:
+The deployed site is above. To run it locally, any static server from this directory:
 
 ```bash
 python -m http.server 4323
@@ -103,6 +105,20 @@ single mark on it, on the door, in the favicon, and as the replay control.
 Free-standing copy over a lit room carries an edgeless radial scrim rather than a card — a hard panel
 breaks the illusion that the lettering is standing in the room. Copy over a bloom-lit surface carries
 a text-shadow instead.
+
+## Deploying
+
+Deployed on Netlify at [ciper-room.netlify.app](https://ciper-room.netlify.app), connected to this
+repository — every push to `main` redeploys, and branches get their own preview URL.
+
+There is nothing to configure in the dashboard: `netlify.toml` declares the publish directory and an
+empty build command, which is what stops framework detection from inventing a build step for a site
+that has none. It also gives `vendor/` a week of caching, since that directory is 1.4MB of pinned
+third-party code and the bulk of a cold visit. Deliberately not `immutable` — those filenames carry
+no content hash, so upgrading three.js or GSAP reuses the same path, and a year of immutable caching
+would strand returning visitors on the old copy.
+
+Any other static host works the same way. The whole site is files; nothing is generated.
 
 ## Third-party
 
