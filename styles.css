@@ -1,0 +1,643 @@
+/* =========================================================================
+   The Cipher Room
+
+   Layer stack, bottom to top:
+      0   #gl        the building — this is the page, not a decoration
+     20   #blackout  the curtain the first room fades up through
+     30   #stage     HTML pinned to points in the 3D scene
+     41   #grain     print grain over everything
+     80   #bar       the playback console
+
+   Direction: IRIS AND NICKEL on ink-violet. The room is lit cold — an
+   electric indigo wash on violet plaster, cold nickel where a bar would
+   normally use brass — and every practical source in it (bulbs, candles,
+   the hearth) burns persimmon against that. One hot colour in a cold room.
+
+   Syne for anything set as a poster, Manrope for anything read at length,
+   DM Mono for anything that behaves like a number or a label. The recurring
+   motif is still the combination dial — now a nickel ring with one mark.
+   ========================================================================= */
+
+:root{
+  --ink:       #0A0713;
+  --plum:      #171129;
+  --iris:      #7B6BF2;
+  --iris-dim:  #3A2F70;
+  --persimmon: #FF7A4D;
+  --persim-hi: #FF9E78;
+  --nickel:    #AEB6C9;
+  --nickel-hi: #DCE2EE;
+  --porcelain: #F2EFF7;
+  --muted:     #A9A2C2;
+  --dim:       #6E6790;
+  --rust:      #5A2418;
+
+  --display: "Syne", "Trebuchet MS", "Segoe UI", sans-serif;
+  --body:    "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:    "DM Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --bar-h: 88px;
+}
+
+*{ box-sizing:border-box; }
+
+html, body{
+  margin:0;
+  height:100%;
+  overflow:hidden;             /* there is no scroll; the camera moves instead */
+  background:var(--ink);
+  overscroll-behavior:none;
+}
+html{ scrollbar-width:none; }
+html::-webkit-scrollbar{ display:none; }
+
+body{
+  font-family:var(--body);
+  color:var(--porcelain);
+  -webkit-font-smoothing:antialiased;
+}
+html.booting body{ opacity:0; }
+
+button{ font:inherit; color:inherit; background:none; border:0; cursor:pointer; }
+
+.mono{
+  font-family:var(--mono);
+  letter-spacing:.16em;
+  text-transform:uppercase;
+}
+
+/* =========================================================================
+   The canvas and the overlay stage
+   ========================================================================= */
+
+#gl{
+  position:fixed; inset:0;
+  width:100%; height:100%;
+  display:block;
+  z-index:0;
+}
+
+#blackout{
+  position:fixed; inset:0; z-index:20;
+  background:var(--ink);
+  pointer-events:none;
+}
+
+/* The perspective here is what gives data-depth children real parallax: as an
+   anchor slides away from the perspective origin, its layers separate. */
+#stage{
+  position:fixed; inset:0; z-index:30;
+  pointer-events:none;
+  perspective:900px;
+  perspective-origin:50% 50%;
+}
+
+.anchor{
+  position:absolute;
+  left:0; top:0;
+  transform-style:preserve-3d;
+  will-change:transform;
+}
+.anchor-in{
+  transform-style:preserve-3d;
+  will-change:transform, opacity;
+}
+.anchor [data-depth]{ transform-style:preserve-3d; }
+
+/* anything genuinely clickable opts back in */
+.anchor button, .anchor a{ pointer-events:auto; }
+
+/* =========================================================================
+   Shared type
+   ========================================================================= */
+
+.eyebrow{
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:.28em;
+  text-transform:uppercase;
+  color:var(--iris);
+  margin:0;
+}
+
+/* Syne is a wide face — headlines are set uppercase and tracked in slightly,
+   which is where it looks like a printed bill rather than a webfont. */
+h1{
+  font-family:var(--display);
+  font-weight:800;
+  font-size:43px;
+  line-height:1.0;
+  letter-spacing:-.022em;
+  text-transform:uppercase;
+  margin:18px 0 0;
+  color:var(--porcelain);
+}
+h2{
+  font-family:var(--display);
+  font-weight:700;
+  font-size:31px;
+  line-height:1.12;
+  letter-spacing:-.018em;
+  margin:12px 0 0;
+  color:var(--porcelain);
+}
+h3{
+  font-family:var(--display);
+  font-weight:600;
+  font-size:20px;
+  line-height:1.18;
+  letter-spacing:-.01em;
+  margin:0;
+  color:var(--porcelain);
+}
+.lede{
+  font-size:16px;
+  line-height:1.62;
+  font-weight:300;
+  color:var(--muted);
+  margin:18px 0 0;
+}
+
+/* The buttons are key tags, not the usual mono-caps pill: the display face
+   rather than the mono, an asymmetric tag silhouette, and a punched hole
+   where the ring would go through. Filled in cold nickel — the warm solid
+   fill belongs to a different room. */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  gap:11px;
+  font-family:var(--display);
+  font-weight:600;
+  font-size:13px;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  padding:12px 22px 12px 17px;
+  border:1px solid transparent;
+  border-radius:2px 15px 2px 15px;
+  transition:background .3s, color .3s, border-color .3s, transform .3s;
+}
+.btn::before{                       /* the punched hole */
+  content:"";
+  width:10px; height:10px;
+  flex:none;
+  border-radius:50%;
+  border:1.5px solid currentColor;
+  opacity:.5;
+}
+.btn:hover{ transform:translateY(-1px); }
+.btn-solid{ background:var(--nickel-hi); color:#0A0713; }
+.btn-solid:hover{ background:#FFFFFF; }
+.btn-ghost{
+  border-color:rgba(123,107,242,.55);
+  background:rgba(123,107,242,.13);
+  color:var(--porcelain);
+}
+.btn-ghost:hover{ border-color:var(--iris); background:rgba(123,107,242,.3); }
+
+/* =========================================================================
+   01 · entrance hall
+   ========================================================================= */
+
+#a-hero{ width:730px; text-align:center; }
+
+/* A soft scrim, not a panel. The camera comes to rest with the brass doorway
+   directly behind this copy, and its lintel ran straight through the middle
+   line of the lede. A hard card would break the illusion that the lettering
+   is standing in the room, so the copy carries an edgeless pool of the room's
+   own black instead — invisible as a shape, decisive as contrast. */
+#a-hero .anchor-in{
+  padding:30px 46px 34px;
+  background:radial-gradient(ellipse 76% 80% at 50% 50%,
+             rgba(7,4,15,.88) 0%, rgba(7,4,15,.74) 52%, rgba(7,4,15,0) 100%);
+}
+#a-hero .lede{ max-width:470px; margin-left:auto; margin-right:auto; }
+#a-hero .ctas{ display:flex; gap:12px; justify-content:center; margin-top:30px; }
+
+/* =========================================================================
+   02 · main bar
+   ========================================================================= */
+
+#a-bar-tag{ width:280px; }
+#a-bar-tag .rule{
+  display:block; height:1px; width:100%;
+  background:linear-gradient(90deg, var(--nickel), transparent);
+  transform-origin:0 50%;
+  margin-bottom:10px;
+}
+
+/* Same tag silhouette as the buttons, and a rule down the binding edge
+   instead of a bar across the top. The index and the price are set in the
+   display face — the mono is kept for things that are genuinely labels. */
+.card{ width:282px; }
+.card .anchor-in{
+  display:block;
+  padding:17px 20px 20px;
+  background:linear-gradient(180deg, rgba(25,18,45,.90), rgba(10,7,19,.94));
+  border:1px solid rgba(123,107,242,.26);
+  border-left:2px solid var(--iris);
+  border-radius:2px 15px 2px 15px;
+  backdrop-filter:blur(7px);
+  -webkit-backdrop-filter:blur(7px);
+  box-shadow:0 22px 60px rgba(0,0,0,.6);
+  position:relative;
+}
+.card-no{
+  display:block;
+  font-family:var(--display);
+  font-weight:800;
+  font-size:25px;
+  line-height:1;
+  letter-spacing:-.04em;
+  color:var(--iris);
+}
+.card h3{ margin-top:9px; color:var(--nickel-hi); }
+.card p{
+  font-size:13px; line-height:1.62; font-weight:400;
+  color:#CFC8E8; margin:10px 0 0;
+}
+.card .price{
+  position:absolute; top:16px; right:19px;
+  font-family:var(--display); font-weight:700;
+  font-size:19px; letter-spacing:-.03em;
+  color:var(--persimmon);
+}
+.card .price::before{
+  content:"$";
+  font-size:.62em; opacity:.7;
+  vertical-align:.32em; margin-right:1px;
+}
+
+/* =========================================================================
+   03 · private lounge
+   ========================================================================= */
+
+#a-story-img{ width:310px; }
+.plate-inner{
+  border:1px solid rgba(174,182,201,.42);
+  border-radius:2px 15px 2px 15px;
+  background:
+    /* the perforations of the pegboard itself */
+    radial-gradient(circle at 4px 4px, rgba(174,182,201,.10) 1.1px, transparent 1.4px) 0 0/13px 13px,
+    linear-gradient(160deg, #221A3A, #0C0916);
+  display:flex;
+  flex-direction:column;
+  gap:16px;                       /* keeps the caption clear of the keys */
+  padding:16px 16px 13px;
+}
+.pegboard{ width:100%; height:auto; display:block; }
+.pegboard .rail{ stroke:rgba(174,182,201,.45); stroke-width:1.4; }
+.pegboard .peg{ fill:var(--iris); }
+.pegboard .wire{ stroke:rgba(174,182,201,.4); stroke-width:1.1; }
+.pegboard .bow{ stroke:var(--nickel); stroke-width:2.1; }
+.pegboard .eye{ stroke:rgba(123,107,242,.85); stroke-width:1.3; }
+.pegboard .shaft,
+.pegboard .teeth{ stroke:var(--nickel); stroke-width:2.4; stroke-linecap:round; }
+.pegboard .tag .card{ fill:rgba(242,239,247,.10); stroke:rgba(174,182,201,.5); stroke-width:1.1; }
+.pegboard .tag .eye{ stroke:rgba(174,182,201,.6); }
+.pegboard .tag .scribble{ stroke:rgba(174,182,201,.4); stroke-width:1.4; stroke-linecap:round; }
+
+.plate-foot{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+  padding-top:12px;
+  border-top:1px solid rgba(123,107,242,.22);
+}
+.plate-label{ font-size:9px; letter-spacing:.16em; color:var(--iris); white-space:nowrap; }
+.plate-no{ font-size:9px; letter-spacing:.16em; color:var(--nickel); flex:none; }
+
+#a-story{ width:400px; }
+/* same treatment as the hero: the prose hangs on a lit plaster wall, and
+   mid-grey body copy on lit plaster is the one combination that fails */
+#a-story .anchor-in{
+  padding:22px 30px 26px;
+  background:radial-gradient(ellipse 82% 86% at 50% 50%,
+             rgba(7,4,15,.86) 0%, rgba(7,4,15,.7) 55%, rgba(7,4,15,0) 100%);
+}
+#a-story p:not(.eyebrow){
+  font-size:14px; line-height:1.68; font-weight:400;
+  color:#C6BFE0; margin:14px 0 0;
+}
+
+/* =========================================================================
+   04 · event room
+   ========================================================================= */
+
+.easel-card{ width:158px; text-align:center; }   /* stays inside the board it hangs on */
+.easel-card .day{
+  display:inline-block;
+  font-size:9px; letter-spacing:.24em;
+  color:var(--persimmon);
+  border:1px solid rgba(255,122,77,.45);
+  padding:4px 9px;
+  margin-bottom:11px;
+}
+.easel-card h3{ font-size:17px; }
+/* the candle beside each easel blooms straight through this copy, so it
+   carries its own shadow rather than relying on the board behind it */
+.easel-card p{
+  font-size:11.5px; line-height:1.55; font-weight:400;
+  color:var(--porcelain); margin:8px 0 0;
+  text-shadow:0 1px 8px rgba(6,4,12,.95), 0 0 22px rgba(6,4,12,.85);
+}
+.easel-card h3, .easel-card .day{
+  text-shadow:0 1px 8px rgba(6,4,12,.95), 0 0 22px rgba(6,4,12,.85);
+}
+
+/* =========================================================================
+   05 · gallery corridor
+   ========================================================================= */
+
+.quote{
+  width:620px;
+  margin:0;
+  font-family:var(--display);
+  font-weight:600;
+  font-size:25px;
+  line-height:1.32;
+  letter-spacing:-.012em;
+  text-align:center;
+  color:var(--persimmon);
+  min-height:2.7em;              /* hold the line box so typing cannot reflow */
+}
+.caret{
+  display:inline-block;
+  width:2px; height:.9em;
+  margin-left:.06em;
+  vertical-align:-.1em;
+  opacity:0;
+}
+.caret i{ display:block; width:100%; height:100%; background:var(--persimmon); }
+
+.attribution{
+  width:620px;
+  text-align:center;
+  font-size:10px; letter-spacing:.26em;
+  color:var(--dim);
+  margin:0;
+}
+
+/* =========================================================================
+   06 · exit
+
+   The contact block is the one place on the page where the copy has an
+   errand — an address, an inbox, a phone number — so it does not get to be
+   atmospheric. It sits on its own plate, at reading size, in porcelain
+   rather than muted violet, and the two lines someone might actually write
+   down are set in nickel a size up from the rest.
+   ========================================================================= */
+
+/* Sized so the whole plate clears the top of the window. The anchor is
+   projected and then centred on its point, so half the plate's height sits
+   *above* that point — a tall plate on a high anchor ran off the top of the
+   browser. The anchor came down (see overlays.js) and the plate came in. */
+.site-foot{ width:640px; }
+
+.site-foot .anchor-in{
+  display:block;
+  padding:22px 26px 16px;
+  background:linear-gradient(180deg, rgba(20,14,36,.92), rgba(8,5,15,.96));
+  border:1px solid rgba(123,107,242,.30);
+  border-top:1px solid rgba(174,182,201,.6);
+  backdrop-filter:blur(12px) saturate(1.2);
+  -webkit-backdrop-filter:blur(12px) saturate(1.2);
+  box-shadow:0 34px 90px rgba(0,0,0,.72), inset 0 1px 0 rgba(242,239,247,.06);
+}
+
+.foot-grid{
+  display:grid;
+  grid-template-columns:1.22fr .92fr 1.06fr;
+  gap:20px;
+  padding-bottom:16px;
+  border-bottom:1px solid rgba(123,107,242,.26);
+}
+.wordmark{
+  font-family:var(--display);
+  font-weight:800;
+  font-size:15px;
+  letter-spacing:-.015em;
+  text-transform:uppercase;
+  color:var(--porcelain);
+  display:block;
+  margin-bottom:10px;
+}
+.foot-grid p{
+  font-size:13.5px;
+  line-height:1.55;
+  font-weight:400;
+  letter-spacing:.004em;
+  color:var(--porcelain);
+  margin:0 0 8px;
+  text-shadow:0 1px 12px rgba(6,4,12,.9);
+}
+.foot-grid .eyebrow{
+  margin-bottom:12px;
+  color:var(--iris);
+  text-shadow:none;
+}
+/* the two lines a reader might copy down */
+.foot-grid .contact{
+  font-size:15px;
+  font-weight:500;
+  color:var(--nickel-hi);
+}
+.foot-grid .contact.mono{
+  font-family:var(--mono);
+  font-size:13px;
+  letter-spacing:.08em;
+}
+/* the day, above the hours it belongs to — "Wed – Sat // 6-1" on one line
+   wrapped mid-phrase at every width worth designing for */
+.foot-grid .when{
+  display:block;
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--nickel);
+  margin-bottom:1px;
+}
+.foot-note{
+  font-size:9px; color:var(--dim);
+  margin:12px 0 0; text-align:center;
+}
+
+/* the dial: the motif, and the way back to the beginning */
+.dial{
+  display:block;
+  width:60px; height:60px;
+  margin:14px auto 0;
+  border-radius:50%;
+  border:1px solid rgba(174,182,201,.55);
+  position:relative;
+  transition:transform .6s cubic-bezier(.16,1,.3,1), border-color .3s;
+}
+.dial::before{
+  content:"";
+  position:absolute; left:50%; top:7px;
+  width:3px; height:11px; margin-left:-1.5px;
+  background:var(--nickel-hi);
+}
+.dial::after{
+  content:"";
+  position:absolute; inset:11px;
+  border-radius:50%;
+  border:1px dashed rgba(123,107,242,.45);
+}
+.dial:hover{ transform:rotate(-120deg); border-color:var(--persimmon); }
+.dial span{
+  position:absolute; inset:0;
+  display:grid; place-items:center;
+  font-family:var(--mono); font-size:8px; letter-spacing:.16em;
+  color:var(--iris);
+}
+
+/* =========================================================================
+   Grain
+   ========================================================================= */
+
+#grain{
+  position:fixed; inset:-100px; z-index:41;
+  pointer-events:none;
+  opacity:.05;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+  /* the jitter is stepped from tour.time() in main.js, never animated in CSS,
+     so an exported frame is identical every time it is drawn */
+}
+
+/* =========================================================================
+   Playback console
+   ========================================================================= */
+
+#bar{
+  position:fixed;
+  left:24px; right:24px; bottom:20px;
+  z-index:80;
+  display:flex;
+  align-items:center;
+  gap:20px;
+  padding:13px 18px;
+  border-radius:4px;
+  background:rgba(18,13,32,.58);
+  backdrop-filter:blur(20px) saturate(1.35);
+  -webkit-backdrop-filter:blur(20px) saturate(1.35);
+  border:1px solid rgba(123,107,242,.26);
+  box-shadow:0 20px 60px rgba(0,0,0,.7), inset 0 1px 0 rgba(242,239,247,.05);
+}
+
+#btn-play{
+  flex:none;
+  width:38px; height:38px;
+  border-radius:50%;
+  background:var(--persimmon);
+  display:grid; place-items:center;
+  transition:transform .25s cubic-bezier(.16,1,.3,1), background .25s;
+}
+#btn-play:hover{ transform:scale(1.08); background:var(--persim-hi); }
+#btn-play svg{ width:13px; height:13px; fill:#1A0703; }
+
+.now{ flex:none; display:flex; flex-direction:column; gap:3px; min-width:150px; }
+.now-idx{ font-size:9px; letter-spacing:.22em; color:var(--nickel); white-space:nowrap; }
+.now-name{
+  font-family:var(--display);
+  font-weight:600;
+  font-size:15px;
+  letter-spacing:-.01em;
+  color:var(--porcelain);
+  white-space:nowrap;
+}
+
+.scrub-wrap{ flex:1; min-width:0; display:flex; flex-direction:column; gap:9px; }
+
+.scrub{ position:relative; height:16px; cursor:pointer; touch-action:none; }
+.scrub-track, .scrub-fill{
+  position:absolute; left:0; top:50%;
+  height:2px; margin-top:-1px; border-radius:2px;
+}
+.scrub-track{ right:0; background:rgba(242,239,247,.15); }
+.scrub-fill{ width:0; background:linear-gradient(90deg, var(--iris), var(--persimmon)); }
+.scrub-ticks{ position:absolute; inset:0; }
+.scrub-ticks i{
+  position:absolute; top:50%;
+  width:1px; height:8px; margin-top:-4px;
+  background:rgba(242,239,247,.3);
+}
+.scrub-handle{
+  position:absolute; left:0; top:50%;
+  width:10px; height:10px; margin:-5px 0 0 -5px;
+  border-radius:50%;
+  background:var(--persim-hi);
+  box-shadow:0 0 12px rgba(255,122,77,.85);
+  cursor:grab;
+}
+.scrub-handle:active{ cursor:grabbing; }
+
+.scrub-labels{ position:relative; height:10px; }
+.scrub-labels span{
+  position:absolute; top:0;
+  transform:translateX(-50%);
+  font-family:var(--mono);
+  font-size:8px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--dim);
+  white-space:nowrap;
+  transition:color .3s, opacity .3s;
+}
+.scrub-labels span:first-child{ transform:none; left:0 !important; }
+.scrub-labels span:last-child{ transform:translateX(-100%); }
+.scrub-labels span.on{ color:var(--persimmon); }
+
+#time{ flex:none; font-size:10px; color:var(--dim); white-space:nowrap; }
+
+.skips{ flex:none; display:flex; gap:5px; }
+.skip{
+  width:26px; height:26px;
+  font-family:var(--mono); font-size:9px;
+  color:var(--dim);
+  border:1px solid rgba(123,107,242,.28);
+  border-radius:2px;
+  transition:color .25s, border-color .25s, background .25s;
+}
+.skip:hover{ color:var(--porcelain); border-color:var(--iris); }
+.skip.on{ color:#0A0713; background:var(--iris); border-color:var(--iris); }
+
+/* capture mode: the film with the furniture stripped out */
+html.capture #bar{ display:none; }
+html.capture body{ cursor:none; }
+
+/* =========================================================================
+   Narrow viewports
+   ========================================================================= */
+
+/* Short windows: the contact plate is the only element on the page tall
+   enough to run off the top, so it loses a size rather than being clipped. */
+@media (max-height:800px){
+  .site-foot{ width:600px; }
+  .site-foot .anchor-in{ padding:18px 22px 13px; }
+  .foot-grid{ gap:18px; padding-bottom:13px; }
+  .foot-grid p{ font-size:12.5px; margin-bottom:6px; }
+  .foot-grid .contact{ font-size:13.5px; }
+  .foot-grid .contact.mono{ font-size:12px; }
+  .wordmark{ font-size:15px; }
+  .dial{ width:52px; height:52px; margin-top:11px; }
+}
+
+@media (max-width:1180px){
+  .scrub-labels span{ opacity:0; }
+  .scrub-labels span.on{ opacity:1; }
+}
+
+@media (max-width:900px){
+  h1{ font-size:36px; }
+  #a-hero{ width:min(88vw, 520px); }
+  .quote{ width:min(88vw, 520px); font-size:20px; }
+  .attribution{ width:min(88vw, 520px); }
+  .site-foot{ width:min(92vw, 540px); }
+  .site-foot .anchor-in{ padding:22px 22px 18px; }
+  .foot-grid{ grid-template-columns:1fr; gap:20px; }
+  .foot-grid p{ font-size:14px; }
+  #a-story{ width:min(80vw, 340px); }
+  .card{ width:min(72vw, 240px); }
+  #time{ display:none; }
+  .skips{ display:none; }
+}

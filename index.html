@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en" class="booting">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Cipher Room — Three turns left. Then knock.</title>
+<meta name="description" content="A speakeasy behind a Savannah locksmith, toured as a single continuous camera move through six rooms. Three.js + GSAP.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230A0713'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23AEB6C9' stroke-width='2'/%3E%3Ccircle cx='16' cy='9' r='1.6' fill='%23FF7A4D'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Manrope:wght@300;400;500;600&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- The whole site is this canvas. Every "page section" is a room the camera
+     walks into; the HTML below is only the lettering stuck to the glass. -->
+<canvas id="gl"></canvas>
+
+<div id="blackout" aria-hidden="true"></div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     Overlays. Each .anchor is pinned to a point in the 3D scene by
+     src/overlays.js — the tour never positions them by hand. Children with
+     data-depth parallax against the camera, which is what sells them as
+     objects standing in the room rather than a HUD.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div id="stage" aria-hidden="false">
+
+  <!-- ─── 01 · ENTRANCE HALL / hero ─── -->
+  <section class="anchor" id="a-hero" data-anchor="hero">
+    <p class="eyebrow" data-depth="30">Savannah, Georgia &nbsp;//&nbsp; By combination only</p>
+    <h1 data-depth="0">Three turns left.<br>Then knock.</h1>
+    <p class="lede" data-depth="-24">A locksmith&rsquo;s back room, kept more or less as it was found.
+      Twelve seats, no telephone, and a list that changes when the ice does.</p>
+    <div class="ctas" data-depth="-52">
+      <button class="btn btn-solid" type="button" data-goto="bar">Request the combination</button>
+      <button class="btn btn-ghost" type="button" data-goto="bar">See the list</button>
+    </div>
+  </section>
+
+  <!-- ─── 02 · MAIN BAR / cocktails ─── -->
+  <article class="anchor card" id="a-card-1" data-anchor="card1">
+    <span class="card-no">01</span>
+    <h3>Dead Drop</h3>
+    <p>Mezcal, green chartreuse, saline, pressed cucumber. Served without ice and without comment.</p>
+    <span class="price">21</span>
+  </article>
+  <article class="anchor card" id="a-card-2" data-anchor="card2">
+    <span class="card-no">02</span>
+    <h3>The Combination</h3>
+    <p>Six-year rye, amontillado, black walnut bitters, and one hand-cut bell of ice.</p>
+    <span class="price">23</span>
+  </article>
+  <article class="anchor card" id="a-card-3" data-anchor="card3">
+    <span class="card-no">03</span>
+    <h3>Verdigris</h3>
+    <p>Navy-strength gin, absinthe rinse, lime cordial, sorrel. It arrives faintly green and stays that way.</p>
+    <span class="price">19</span>
+  </article>
+
+  <div class="anchor section-tag" id="a-bar-tag" data-anchor="barTag">
+    <span class="rule"></span>
+    <p class="eyebrow">The list &nbsp;//&nbsp; Room 02</p>
+  </div>
+
+  <!-- ─── 03 · PRIVATE LOUNGE / story ─── -->
+  <div class="anchor plate" id="a-story-img" data-anchor="storyImg">
+    <div class="plate-inner">
+      <!-- The pegboard the copy on the right refers to: six key blanks on
+           their pegs. Drawn rather than photographed so it ships with the
+           page and renders identically on every frame of an export. -->
+      <svg class="pegboard" viewBox="0 0 268 152" fill="none" aria-hidden="true">
+        <path class="rail" d="M14 20 H254"/>
+        <g class="blank" transform="translate(36 20)">
+          <circle class="peg" cx="0" cy="0" r="2.6"/>
+          <path class="wire" d="M0 0 V22"/>
+          <circle class="bow" cx="0" cy="32" r="9.5"/>
+          <circle class="eye" cx="0" cy="32" r="3.6"/>
+          <path class="shaft" d="M0 41.5 V92"/>
+          <path class="teeth" d="M0 68 H7 M0 78 H5 M0 87 H8"/>
+        </g>
+        <g class="blank" transform="translate(80 20)">
+          <circle class="peg" cx="0" cy="0" r="2.6"/>
+          <path class="wire" d="M0 0 V30"/>
+          <circle class="bow" cx="0" cy="40" r="9.5"/>
+          <circle class="eye" cx="0" cy="40" r="3.6"/>
+          <path class="shaft" d="M0 49.5 V96"/>
+          <path class="teeth" d="M0 74 H6 M0 84 H8 M0 91 H5"/>
+        </g>
+        <g class="blank" transform="translate(124 20)">
+          <circle class="peg" cx="0" cy="0" r="2.6"/>
+          <path class="wire" d="M0 0 V18"/>
+          <circle class="bow" cx="0" cy="28" r="9.5"/>
+          <circle class="eye" cx="0" cy="28" r="3.6"/>
+          <path class="shaft" d="M0 37.5 V84"/>
+          <path class="teeth" d="M0 62 H8 M0 71 H5 M0 79 H7"/>
+        </g>
+        <g class="blank" transform="translate(168 20)">
+          <circle class="peg" cx="0" cy="0" r="2.6"/>
+          <path class="wire" d="M0 0 V26"/>
+          <circle class="bow" cx="0" cy="36" r="9.5"/>
+          <circle class="eye" cx="0" cy="36" r="3.6"/>
+          <path class="shaft" d="M0 45.5 V90"/>
+          <path class="teeth" d="M0 70 H5 M0 79 H8 M0 86 H6"/>
+        </g>
+        <g class="blank" transform="translate(212 20)">
+          <circle class="peg" cx="0" cy="0" r="2.6"/>
+          <path class="wire" d="M0 0 V34"/>
+          <circle class="bow" cx="0" cy="44" r="9.5"/>
+          <circle class="eye" cx="0" cy="44" r="3.6"/>
+          <path class="shaft" d="M0 53.5 V99"/>
+          <path class="teeth" d="M0 77 H7 M0 86 H5 M0 94 H8"/>
+        </g>
+        <!-- the tag hanging off the end of the rail -->
+        <g class="tag" transform="translate(240 20)">
+          <path class="wire" d="M0 0 V14"/>
+          <rect class="card" x="-13" y="14" width="26" height="34" rx="3"/>
+          <circle class="eye" cx="0" cy="21" r="2.4"/>
+          <path class="scribble" d="M-7 30 H7 M-7 36 H4 M-7 42 H6"/>
+        </g>
+      </svg>
+
+      <div class="plate-foot">
+        <span class="plate-label mono">Sawyer &amp; Sons &mdash; 1961</span>
+        <span class="plate-no mono">No. 0041</span>
+      </div>
+    </div>
+  </div>
+  <section class="anchor prose" id="a-story" data-anchor="story">
+    <p class="eyebrow">How we got the room</p>
+    <h2>Sixty-one years of other people&rsquo;s keys</h2>
+    <p>Sawyer &amp; Sons cut keys at this address until the last Sawyer retired and left the back room
+      exactly as it stood &mdash; pegboard, ledger, and a floor safe nobody has opened since.</p>
+    <p>We changed three things: the lighting, the ice, and the hours. The pegboard stays.</p>
+  </section>
+
+  <!-- ─── 04 · EVENT ROOM / gatherings ─── -->
+  <div class="anchor easel-card" id="a-ev-1" data-anchor="ev1">
+    <span class="day mono">TUE</span>
+    <h3>Cipher Night</h3>
+    <p>The combination is posted nowhere. Solve it, or wait for someone who has.</p>
+  </div>
+  <div class="anchor easel-card" id="a-ev-2" data-anchor="ev2">
+    <span class="day mono">THU</span>
+    <h3>Two Turntables, One Bulb</h3>
+    <p>Records only, played through the shop&rsquo;s original mono horn.</p>
+  </div>
+  <div class="anchor easel-card" id="a-ev-3" data-anchor="ev3">
+    <span class="day mono">SUN</span>
+    <h3>Locksmith&rsquo;s Hour</h3>
+    <p>Half the list, chosen by whoever is behind the bar. No substitutions.</p>
+  </div>
+
+  <!-- ─── 05 · GALLERY CORRIDOR / testimonial ─── -->
+  <blockquote class="anchor quote" id="a-quote" data-anchor="quote">
+    <span id="quote-text"></span><span class="caret" aria-hidden="true"><i></i></span>
+  </blockquote>
+  <p class="anchor attribution mono" id="a-attrib" data-anchor="attrib">Southern Review of Drink</p>
+
+  <!-- ─── 06 · EXIT / footer ─── -->
+  <footer class="anchor site-foot" id="a-foot" data-anchor="foot">
+    <div class="foot-grid">
+      <div>
+        <span class="wordmark">The Cipher Room</span>
+        <p class="contact">Behind Sawyer &amp; Sons Locksmith.<br>219 Wharfside Lane, Savannah GA 31401</p>
+      </div>
+      <div>
+        <p class="eyebrow">Hours</p>
+        <p><span class="when">Wed &ndash; Sat</span>6:00 PM &ndash; 1:00 AM</p>
+        <p><span class="when">Sunday</span>6:00 PM &ndash; 11:00 PM</p>
+        <p><span class="when">Monday &amp; Tuesday</span>Closed</p>
+      </div>
+      <div>
+        <p class="eyebrow">Enquiries</p>
+        <p class="contact">combination@cipherroom.co</p>
+        <p class="contact mono">(912) 555&ndash;0119</p>
+      </div>
+    </div>
+    <button class="dial" type="button" data-restart aria-label="Walk the tour again"><span>REPLAY</span></button>
+    <p class="foot-note mono">&copy; 2026 The Cipher Room &mdash; 219 Wharfside Lane, Savannah</p>
+  </footer>
+
+</div>
+
+<div id="grain" aria-hidden="true"></div>
+
+<!-- ══ PLAYBACK BAR ══ -->
+<div id="bar" role="group" aria-label="Tour controls">
+  <button id="btn-play" type="button" aria-label="Pause">
+    <svg id="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>
+  </button>
+
+  <div class="now">
+    <span class="now-idx mono" id="now-idx">Room 01 / 06</span>
+    <span class="now-name" id="now-name">Entrance Hall</span>
+  </div>
+
+  <div class="scrub-wrap">
+    <div class="scrub" id="scrub" role="slider" tabindex="0"
+         aria-label="Tour position" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <span class="scrub-track"></span>
+      <span class="scrub-fill" id="scrub-fill"></span>
+      <span class="scrub-ticks" id="scrub-ticks"></span>
+      <span class="scrub-handle" id="scrub-handle"></span>
+    </div>
+    <div class="scrub-labels" id="scrub-labels"></div>
+  </div>
+
+  <span id="time" class="mono">0:00 / 0:00</span>
+
+  <div class="skips" id="skips"></div>
+</div>
+
+<script src="vendor/gsap.min.js"></script>
+<script src="vendor/TextPlugin.min.js"></script>
+<script src="vendor/Draggable.min.js"></script>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js" } }
+</script>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
