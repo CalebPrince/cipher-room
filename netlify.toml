@@ -1,0 +1,23 @@
+# The site is static and self-contained: no build step, no install, nothing
+# generated. Saying so explicitly stops Netlify's framework detection from
+# guessing at one.
+
+[build]
+  publish = "."
+  command = ""
+
+# vendor/ is 1.4MB of pinned third-party code — three.js r169 and GSAP 3.12.5 —
+# and it is the bulk of what a first visit downloads. Netlify's default is
+# revalidate-on-every-request, which costs a round trip per file per load.
+#
+# A week rather than a year, and deliberately not `immutable`: these filenames
+# carry no content hash, so an upgrade to either library reuses the same path.
+# A year of immutable caching would serve the old copy to returning visitors
+# with no way to bust it short of renaming the file.
+[[headers]]
+  for = "/vendor/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+# The hand-written source changes whenever the film is retimed or redirected,
+# so it keeps the revalidating default and is left alone here.
